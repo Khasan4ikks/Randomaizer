@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Генератор хоккейных команд</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+</head>
+<body class="auth-mode">
+  <!-- Экран входа: без успешной авторизации основное приложение не показывается -->
+  <section class="auth-screen" id="authScreen" aria-hidden="false">
+    <div class="auth-card">
+      <p class="hero__eyebrow">Barni Demo Randomaizer</p>
+      <h1>Вход в приложение</h1>
+      <p class="auth-text">Введите логин и пароль.</p>
+
+      <form id="loginForm" class="auth-form">
+        <label>
+          <span class="field-label">Логин</span>
+          <input type="text" id="loginInput" autocomplete="username" placeholder="Введите логин">
+        </label>
+        <label>
+          <span class="field-label">Пароль</span>
+          <input type="password" id="passwordInput" autocomplete="current-password" placeholder="Введите пароль">
+        </label>
+        <button class="primary-button" id="loginButton" type="submit">Войти</button>
+      </form>
+
+      <div id="authMessage" class="message-box" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- Основное приложение скрыто до успешного входа -->
+  <div class="page-shell" id="appShell" aria-hidden="true" hidden>
+    <header class="hero">
+      <div class="hero__content">
+        <p class="hero__eyebrow">Составы на лёд</p>
+        <h1>Генератор хоккейных команд</h1>
+        <p class="hero__text">
+          Загрузите перекличку, проверьте состав и получите две команды по 10 полевых игроков с учётом ограничений.
+        </p>
+      </div>
+
+      <div class="hero__actions">
+        <button class="icon-button" id="themeToggle" type="button" aria-label="Переключить тему">
+          <span id="themeToggleText"><span class="emoji">🌗</span> Тема</span>
+        </button>
+        <button class="icon-button" id="settingsToggle" type="button" aria-label="Открыть настройки">
+          ⚙️
+        </button>
+        <button class="ghost-button" id="logoutButton" type="button">Выйти</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <div class="panel__header">
+          <h2>Ввод данных</h2>
+          <span class="panel__hint">2 вратаря и 20 полевых игроков</span>
+        </div>
+
+        <div class="telegram-block">
+          <label class="section-label" for="telegramInput">Вставьте перекличку из Telegram</label>
+          <textarea id="telegramInput" rows="9" placeholder="Вратари:
+1. Азат
+2. Хасан
+
+Полевые:
+1. Макс
+2. Ильназ
+..."></textarea>
+          <button class="primary-button" id="fillTelegramButton" type="button">Заполнить из Telegram</button>
+        </div>
+
+        <div class="inputs-grid">
+          <div class="input-section">
+            <h3>Вратари</h3>
+            <div class="goalies-grid">
+              <label class="numbered-input">
+                <span>1.</span>
+                <input type="text" class="goalie-input" data-index="0" placeholder="Имя вратаря">
+              </label>
+              <label class="numbered-input">
+                <span>2.</span>
+                <input type="text" class="goalie-input" data-index="1" placeholder="Имя вратаря">
+              </label>
+            </div>
+          </div>
+
+          <div class="input-section">
+            <h3>Полевые игроки</h3>
+            <div class="players-grid" id="playersGrid"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <h2>Действия</h2>
+          <span class="panel__hint">Генерация, экспорт и сброс</span>
+        </div>
+
+        <div class="actions-list">
+          <button class="primary-button" id="generateButton" type="button">Сгенерировать команды</button>
+          <button class="secondary-button" id="exportButton" type="button">Экспорт результата</button>
+          <button class="ghost-button" id="resetButton" type="button">Сбросить всё</button>
+        </div>
+
+        <p id="generationLimitHint" class="action-hint" aria-live="polite"></p>
+        <p id="resetLimitHint" class="action-hint" aria-live="polite"></p>
+
+        <div class="status-box">
+          <p id="generationCounter">Генерация №0</p>
+          <p id="swapCounter">Использовано обменов: 0 из 3</p>
+        </div>
+
+        <div id="messageBox" class="message-box" aria-live="polite"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <h2>Результат</h2>
+          <span class="panel__hint">Составы команд и вратари</span>
+        </div>
+
+        <div class="teams-wrap">
+          <div class="team-card team-card--dark">
+            <h3>1 группа тёмные</h3>
+            <ol id="darkTeamList" class="team-list"></ol>
+          </div>
+
+          <div class="team-card team-card--light">
+            <h3>2 группа светлые</h3>
+            <ol id="lightTeamList" class="team-list"></ol>
+          </div>
+        </div>
+
+        <div class="goalies-card">
+          <h3>Вратари</h3>
+          <ol id="goaliesList" class="team-list"></ol>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <h2>Ручная корректировка</h2>
+          <span class="panel__hint">До 3 попарных обменов между командами</span>
+        </div>
+
+        <div class="swap-controls">
+          <select id="darkSelect">
+            <option value="">Игрок из тёмных</option>
+          </select>
+          <select id="lightSelect">
+            <option value="">Игрок из светлых</option>
+          </select>
+          <button class="secondary-button" id="swapButton" type="button">Поменять местами</button>
+        </div>
+
+        <p id="swapLimitHint" class="action-hint" aria-live="polite"></p>
+      </section>
+    </main>
+  </div>
+
+  <!-- Настройки работают только как модальное окно -->
+  <div class="modal-overlay is-hidden" id="settingsOverlay" aria-hidden="true">
+    <aside class="panel settings-modal" id="settingsPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="panel__header panel__header--modal">
+        <div>
+          <h2 id="settingsTitle">Настройки</h2>
+          <span class="panel__hint">Пары игроков, которых нельзя ставить в одну команду</span>
+        </div>
+        <button class="icon-button modal-close" id="settingsClose" type="button" aria-label="Закрыть настройки">✕</button>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-toolbar">
+          <p class="section-label">Пары игроков</p>
+          <button class="secondary-button" id="addRestrictionButton" type="button">+ Добавить</button>
+        </div>
+        <div id="restrictionsList" class="restriction-list"></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Подключение supabase-js через CDN без npm -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="script.js?v=20260408-1"></script>
+</body>
+</html>
