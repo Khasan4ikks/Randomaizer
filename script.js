@@ -16,6 +16,7 @@ const MAX_SWAPS = 3;
 const MAX_GENERATIONS = 3;
 const RESET_AFTER_HOURS = 6;
 const RESET_AFTER_MS = RESET_AFTER_HOURS * 60 * 60 * 1000;
+const SUPABASE_HEARTBEAT_INTERVAL_MS = 60 * 60 * 1000;
 
 // Инициализация Supabase: сюда нужно вставить Project URL и anon key.
 const SUPABASE_URL = "https://cuuwjqtinvnbusuicxwb.supabase.co";
@@ -24,7 +25,8 @@ const SUPABASE_ANON_KEY = "sb_publishable_q_2H3WYs_15JzRhMBWcOQA_kqoff1t9";
 const presetRestrictions = [
   { id: "preset-1", player1: "Айнур", player2: "Ирек", enabled: true, type: "preset" },
   { id: "preset-2", player1: "Алексей", player2: "Булат", enabled: true, type: "preset" },
-  { id: "preset-3", player1: "Алексей", player2: "Артем", enabled: true, type: "preset" }
+  { id: "preset-3", player1: "Алексей", player2: "Артем", enabled: true, type: "preset" },
+  { id: "preset-4", player1: "Инсаф", player2: "Ильназ Ш", enabled: true, type: "preset" }
 ];
 
 const state = {
@@ -48,6 +50,7 @@ const state = {
 const elements = {};
 let supabaseClient = null;
 let countdownIntervalId = null;
+let supabaseHeartbeatIntervalId = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   cacheElements();
@@ -145,6 +148,7 @@ function bindEvents() {
 
   elements.loginInput.addEventListener("input", clearAuthMessage);
   elements.passwordInput.addEventListener("input", clearAuthMessage);
+  document.addEventListener("visibilitychange", handleVisibilityChange);
 }
 
 function initializeSupabaseClient() {
@@ -154,6 +158,59 @@ function initializeSupabaseClient() {
   }
 
   supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  startSupabaseHeartbeat();
+}
+
+async function sendSupabaseHeartbeat() {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || document.visibilityState !== "visible") {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/app_users?select=id&limit=1`, {
+      method: "GET",
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Prefer: "count=exact"
+      },
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      console.warn("Supabase heartbeat failed", response.status, response.statusText);
+    }
+  } catch (error) {
+    console.warn("Supabase heartbeat failed", error);
+  }
+}
+
+function startSupabaseHeartbeat() {
+  if (!supabaseClient || supabaseHeartbeatIntervalId) {
+    return;
+  }
+
+  sendSupabaseHeartbeat();
+  supabaseHeartbeatIntervalId = window.setInterval(sendSupabaseHeartbeat, SUPABASE_HEARTBEAT_INTERVAL_MS);
+}
+
+function stopSupabaseHeartbeat() {
+  if (!supabaseHeartbeatIntervalId) {
+    return;
+  }
+
+  window.clearInterval(supabaseHeartbeatIntervalId);
+  supabaseHeartbeatIntervalId = null;
+}
+
+function handleVisibilityChange() {
+  if (document.visibilityState === "visible") {
+    startSupabaseHeartbeat();
+    sendSupabaseHeartbeat();
+    return;
+  }
+
+  stopSupabaseHeartbeat();
 }
 
 // Логин работает через таблицу app_users в Supabase, без регистрации.
@@ -502,12 +559,24 @@ function validateRestrictions(teams) {
 }
 
 function normalizeComparisonName(name) {
-  return sanitizeName(name).toLowerCase();
+  return sanitizeName(name)
+    .replace(/\(\s*гость\s*\)/gi, " ")
+    .replace(/\s+гость\s+вместо\s+.+$/i, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function matchesRestrictedPlayer(teamPlayerName, restrictedName) {
+  return teamPlayerName === restrictedName
+    || teamPlayerName.startsWith(`${restrictedName} `)
+    || restrictedName.startsWith(`${teamPlayerName} `);
 }
 
 function isPairInSameTeam(team, player1, player2) {
   const names = team.map((player) => normalizeComparisonName(player.name));
-  return names.includes(player1) && names.includes(player2);
+  return names.some((name) => matchesRestrictedPlayer(name, player1))
+    && names.some((name) => matchesRestrictedPlayer(name, player2));
 }
 
 // Логика обменов: только попарный обмен и максимум 3 раза.
@@ -576,16 +645,14 @@ function exportTeamsToText() {
   ].join("\n");
 
   return [
-    "1 группа тёмные",
+    "🖤 1 группа тёмные",
     darkTeamText,
     "",
-    "2 группа светлые",
+    "🤍 2 группа светлые",
     lightTeamText,
     "",
-    "Вратари:",
-    goaliesText || "1. -\n2. -",
-    "",
-    `Генерация №${state.generationNumber}`
+    "🥅 Вратари:",
+    goaliesText || "1. -\n2. -"
   ].join("\n");
 }
 
