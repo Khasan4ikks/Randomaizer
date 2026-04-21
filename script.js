@@ -51,6 +51,7 @@ const elements = {};
 let supabaseClient = null;
 let countdownIntervalId = null;
 let supabaseHeartbeatIntervalId = null;
+let messageHideTimeoutId = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   cacheElements();
@@ -1328,6 +1329,26 @@ function resetAll() {
 }
 
 function showMessage(text, type) {
+  if (messageHideTimeoutId) {
+    window.clearTimeout(messageHideTimeoutId);
+    messageHideTimeoutId = null;
+  }
+
+  if (!text) {
+    elements.messageBox.textContent = "";
+    elements.messageBox.className = "message-box";
+    elements.messageBox.hidden = true;
+    return;
+  }
+
+  elements.messageBox.hidden = false;
   elements.messageBox.textContent = text;
-  elements.messageBox.className = `message-box ${type === "error" ? "is-error" : "is-success"}`;
+  elements.messageBox.className = `message-box is-visible ${type === "error" ? "is-error" : "is-success"}`;
+
+  messageHideTimeoutId = window.setTimeout(() => {
+    elements.messageBox.textContent = "";
+    elements.messageBox.className = "message-box";
+    elements.messageBox.hidden = true;
+    messageHideTimeoutId = null;
+  }, 2000);
 }
