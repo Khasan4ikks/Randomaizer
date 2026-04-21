@@ -16,7 +16,7 @@ const MAX_SWAPS = 3;
 const MAX_GENERATIONS = 3;
 const RESET_AFTER_HOURS = 6;
 const RESET_AFTER_MS = RESET_AFTER_HOURS * 60 * 60 * 1000;
-const SUPABASE_HEARTBEAT_INTERVAL_MS = 60 * 60 * 1000;
+const SUPABASE_HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000;
 
 // Инициализация Supabase: сюда нужно вставить Project URL и anon key.
 const SUPABASE_URL = "https://cuuwjqtinvnbusuicxwb.supabase.co";
@@ -26,7 +26,6 @@ const presetRestrictions = [
   { id: "preset-1", player1: "Айнур", player2: "Ирек", enabled: true, type: "preset" },
   { id: "preset-2", player1: "Алексей", player2: "Булат", enabled: true, type: "preset" },
   { id: "preset-3", player1: "Алексей", player2: "Артем", enabled: true, type: "preset" },
-  { id: "preset-4", player1: "Инсаф", player2: "Ильназ Ш", enabled: true, type: "preset" }
 ];
 
 const state = {
@@ -561,6 +560,7 @@ function validateRestrictions(teams) {
 function normalizeComparisonName(name) {
   return sanitizeName(name)
     .replace(/\(\s*гость\s*\)/gi, " ")
+    .replace(/\(\s*гость\s+вместо\s+[^)]+\)/gi, " ")
     .replace(/\s+гость\s+вместо\s+.+$/i, "")
     .replace(/\s+/g, " ")
     .trim()
@@ -645,14 +645,16 @@ function exportTeamsToText() {
   ].join("\n");
 
   return [
-    "🖤 1 группа тёмные",
+    "1 группа тёмные",
     darkTeamText,
     "",
-    "🤍 2 группа светлые",
+    "2 группа светлые",
     lightTeamText,
     "",
-    "🥅 Вратари:",
-    goaliesText || "1. -\n2. -"
+    "Вратари:",
+    goaliesText || "1. -\n2. -",
+    "",
+    `Генерация №${state.generationNumber}`
   ].join("\n");
 }
 
