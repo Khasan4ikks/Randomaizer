@@ -647,16 +647,14 @@ function exportTeamsToText() {
   ].join("\n");
 
   return [
-    "1 группа тёмные",
+    "⬛ 1 группа тёмные",
     darkTeamText,
     "",
-    "2 группа светлые",
+    "⬜ 2 группа светлые",
     lightTeamText,
     "",
-    "Вратари:",
-    goaliesText || "1. -\n2. -",
-    "",
-    `Генерация №${state.generationNumber}`
+    "🥅 Вратари:",
+    goaliesText || "1. -\n2. -"
   ].join("\n");
 }
 
