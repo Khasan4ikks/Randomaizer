@@ -52,6 +52,7 @@ let supabaseClient = null;
 let countdownIntervalId = null;
 let supabaseHeartbeatIntervalId = null;
 let messageHideTimeoutId = null;
+let loginReactionTimeoutId = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   cacheElements();
@@ -75,6 +76,8 @@ function cacheElements() {
   elements.passwordInput = document.getElementById("passwordInput");
   elements.loginButton = document.getElementById("loginButton");
   elements.authMessage = document.getElementById("authMessage");
+  elements.loginReaction = document.getElementById("loginReaction");
+  elements.loginReactionImage = document.getElementById("loginReactionImage");
   elements.logoutButton = document.getElementById("logoutButton");
   elements.telegramInput = document.getElementById("telegramInput");
   elements.fillTelegramButton = document.getElementById("fillTelegramButton");
@@ -223,16 +226,19 @@ async function handleLogin(event) {
 
   if (!login || !password) {
     showAuthMessage("Введите логин и пароль", "error");
+    showLoginReaction("error");
     return;
   }
 
   if (!supabaseClient) {
     showAuthMessage("Ошибка подключения к Supabase", "error");
+    showLoginReaction("error");
     return;
   }
 
   if (login !== "admin" || password !== "admin") {
     showAuthMessage("Некорректные данные", "error");
+    showLoginReaction("error");
     return;
   }
 
@@ -251,17 +257,20 @@ async function handleLogin(event) {
 
     if (error) {
       showAuthMessage("Ошибка подключения к Supabase", "error");
+      showLoginReaction("error");
       return;
     }
 
     if (!data) {
       showAuthMessage("Некорректные данные", "error");
+      showLoginReaction("error");
       return;
     }
 
     completeLogin();
   } catch (error) {
     showAuthMessage("Ошибка подключения к Supabase", "error");
+    showLoginReaction("error");
   } finally {
     elements.loginButton.disabled = false;
     elements.loginButton.textContent = previousButtonText;
@@ -269,6 +278,7 @@ async function handleLogin(event) {
 }
 
 function completeLogin() {
+  showLoginReaction("success");
   state.isAuthenticated = true;
   localStorage.setItem(STORAGE_KEYS.isAuthenticated, "true");
   elements.loginInput.value = "";
@@ -307,6 +317,41 @@ function showAuthMessage(text, type = "") {
 
 function clearAuthMessage() {
   showAuthMessage("");
+}
+
+function showLoginReaction(type) {
+  if (!elements.loginReaction || !elements.loginReactionImage) {
+    return;
+  }
+
+  if (loginReactionTimeoutId) {
+    window.clearTimeout(loginReactionTimeoutId);
+    loginReactionTimeoutId = null;
+  }
+
+  // Если фото будут называться иначе, поменяйте пути ниже.
+  // Ожидаемые файлы: images/login-success.png и images/login-error.png
+  const imagePath = type === "error"
+    ? "images/login-error.png"
+    : "images/login-success.png";
+  const imageAlt = type === "error"
+    ? "Грустный хоккеист"
+    : "Улыбающийся хоккеист";
+
+  elements.loginReactionImage.src = imagePath;
+  elements.loginReactionImage.alt = imageAlt;
+  elements.loginReaction.hidden = false;
+  elements.loginReaction.setAttribute("aria-hidden", "false");
+  elements.loginReaction.classList.add("is-visible");
+
+  loginReactionTimeoutId = window.setTimeout(() => {
+    elements.loginReaction.classList.remove("is-visible");
+    elements.loginReaction.setAttribute("aria-hidden", "true");
+    loginReactionTimeoutId = window.setTimeout(() => {
+      elements.loginReaction.hidden = true;
+      loginReactionTimeoutId = null;
+    }, 200);
+  }, 1000);
 }
 
 function requireAuthentication() {

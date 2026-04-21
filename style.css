@@ -77,6 +77,32 @@ body.modal-open {
   overflow: hidden;
 }
 
+.login-reaction {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  z-index: 1400;
+  opacity: 0;
+  transform: translateY(24px) scale(0.96);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.login-reaction.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.login-reaction__image {
+  display: block;
+  width: min(320px, 46vw);
+  max-height: 360px;
+  object-fit: cover;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
 button,
 input,
 textarea,
@@ -155,6 +181,15 @@ textarea {
   align-items: center;
   justify-content: center;
   padding: 24px;
+  background:
+    linear-gradient(rgba(9, 17, 28, 0.34), rgba(9, 17, 28, 0.34)),
+    url("images/backgroundFon-light.png") center / cover no-repeat;
+}
+
+body.theme-dark .auth-screen {
+  background:
+    linear-gradient(rgba(9, 17, 28, 0.42), rgba(9, 17, 28, 0.42)),
+    url("images/backgroundFon-dark.png") center / cover no-repeat;
 }
 
 .auth-card {

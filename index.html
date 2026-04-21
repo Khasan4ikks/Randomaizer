@@ -34,6 +34,18 @@
     </div>
   </section>
 
+  <!-- Фото для реакции на логин положите в папку images:
+       images/login-success.png - улыбающийся хоккеист
+       images/login-error.png - грустный хоккеист -->
+  <div class="login-reaction" id="loginReaction" hidden aria-hidden="true">
+    <img
+      id="loginReactionImage"
+      class="login-reaction__image"
+      src="images/login-success.png"
+      alt="Реакция на вход"
+    >
+  </div>
+
   <!-- Основное приложение скрыто до успешного входа -->
   <div class="page-shell" id="appShell" aria-hidden="true" hidden>
     <header class="hero">
