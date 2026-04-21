@@ -26,6 +26,7 @@ const presetRestrictions = [
   { id: "preset-1", player1: "Айнур", player2: "Ирек", enabled: true, type: "preset" },
   { id: "preset-2", player1: "Алексей", player2: "Булат", enabled: true, type: "preset" },
   { id: "preset-3", player1: "Алексей", player2: "Артем", enabled: true, type: "preset" },
+  { id: "preset-4", player1: "Инсаф", player2: "Ильназ Ш", enabled: true, type: "preset" },
 ];
 
 const state = {
