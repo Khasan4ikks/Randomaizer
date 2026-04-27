@@ -53,6 +53,7 @@ let countdownIntervalId = null;
 let supabaseHeartbeatIntervalId = null;
 let messageHideTimeoutId = null;
 let loginReactionTimeoutId = null;
+let isGeneratingTeams = false;
 
 document.addEventListener("DOMContentLoaded", () => {
   cacheElements();
@@ -539,56 +540,67 @@ function generateTeams() {
     return;
   }
 
-  if (state.generationNumber >= MAX_GENERATIONS) {
-    ensureGenerationCooldownStarted();
-    showMessage("Достигнут лимит генераций: 3 из 3", "error");
-    renderActionStates();
+  if (isGeneratingTeams) {
     return;
   }
 
-  state.players = collectPlayersFromInputs();
-  state.goalies = elements.goalieInputs.map((input) => sanitizeName(input.value));
+  isGeneratingTeams = true;
 
-  if (!validatePlayers()) {
-    return;
-  }
-
-  let generatedTeams = null;
-  const activePlayers = state.players.map((player) => ({ ...player }));
-
-  for (let attempt = 0; attempt < 100; attempt += 1) {
-    const shuffledPlayers = shuffleArray(activePlayers);
-    const candidateTeams = {
-      dark: shuffledPlayers.slice(0, 10),
-      light: shuffledPlayers.slice(10, 20)
-    };
-
-    // Проверка ограничений: пары из настроек не должны попадать в одну команду.
-    if (validateRestrictions(candidateTeams)) {
-      generatedTeams = candidateTeams;
-      break;
+  try {
+    if (state.generationNumber >= MAX_GENERATIONS) {
+      ensureGenerationCooldownStarted();
+      showMessage("Достигнут лимит генераций: 3 из 3", "error");
+      renderActionStates();
+      return;
     }
-  }
 
-  if (!generatedTeams) {
-    showMessage("Не удалось сгенерировать команды с учётом ограничений", "error");
-    return;
-  }
+    state.players = collectPlayersFromInputs();
+    state.goalies = elements.goalieInputs.map((input) => sanitizeName(input.value));
 
-  state.generationNumber += 1;
-  state.swapCount = 0;
-  state.teams = generatedTeams;
-  state.goalieTeams = assignGoaliesToTeams(state.goalies);
-  if (state.generationNumber >= MAX_GENERATIONS) {
-    ensureGenerationCooldownStarted();
-  }
-  saveState();
-  renderAll();
+    if (!validatePlayers()) {
+      return;
+    }
 
-  if (state.generationNumber >= MAX_GENERATIONS) {
-    showMessage("Достигнут лимит генераций: 3 из 3", "error");
-  } else {
-    showMessage("Команды успешно сгенерированы", "success");
+    let generatedTeams = null;
+    const activePlayers = state.players.map((player) => ({ ...player }));
+
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      const shuffledPlayers = shuffleArray(activePlayers);
+      const candidateTeams = {
+        dark: shuffledPlayers.slice(0, 10),
+        light: shuffledPlayers.slice(10, 20)
+      };
+
+      // Проверка ограничений: пары из настроек не должны попадать в одну команду.
+      if (validateRestrictions(candidateTeams)) {
+        generatedTeams = candidateTeams;
+        break;
+      }
+    }
+
+    if (!generatedTeams) {
+      showMessage("Не удалось сгенерировать команды с учётом ограничений", "error");
+      return;
+    }
+
+    // Увеличиваем счётчик только один раз после успешной генерации
+    state.generationNumber += 1;
+    state.swapCount = 0;
+    state.teams = generatedTeams;
+    state.goalieTeams = assignGoaliesToTeams(state.goalies);
+    if (state.generationNumber >= MAX_GENERATIONS) {
+      ensureGenerationCooldownStarted();
+    }
+    saveState();
+    renderAll();
+
+    if (state.generationNumber >= MAX_GENERATIONS) {
+      showMessage("Достигнут лимит генераций: 3 из 3", "error");
+    } else {
+      showMessage("Команды успешно сгенерированы", "success");
+    }
+  } finally {
+    isGeneratingTeams = false;
   }
 }
 
